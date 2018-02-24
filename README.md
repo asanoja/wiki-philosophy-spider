@@ -18,8 +18,11 @@ PS: Sorry in advance!,  it was developed in 2011, so it uses still HPRICOT gem.
 # Examples
 
 $ ruby wikispider/wikispider.rb
+
 Term: Ruby
+
 Starting search for Ruby
+
 1. Ruby
 2. Gemstone
 3. Crystal
