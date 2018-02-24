@@ -4,41 +4,44 @@ require 'hpricot'
 require 'open-uri'
 require 'uri'
 
-class ParA
-	def to_s
-		'('
-	end
-end
-
-class ParC
-	def to_s
-		')'
-	end
-end
-
 class Link
 	def initialize(elem)
-		@href = CGI::unescape(elem.attributes['href'].gsub("/wiki/",""))
+		@elem = elem
+		@href=elem.attributes['href']
 	end
-	def to_s
-		@href
-	end
-end
-
-def checklnk(href)
-	ret = true
-	["File:","Wikipedia:","Glossary_of","List_of","Geographic_coordinate_system","Anexo:","Help:"].each do |x|
-		if ret and href.include? x
-			ret = false
+	def class
+	p @href
+		re = /\((\w+),(\w+)\)/
+		match = re.match(@href)
+		if match
+		  return match[1]
+		 else
+		  return "NONE"
 		end
 	end
-	ret
+	def term
+		return CGI::unescape(@elem.attributes['href'].gsub("/wiki/",""))
+	end
+	def valid?
+		ret = true
+		["File:","Wikipedia:","Glossary_of","List_of","Geographic_coordinate_system",":","#"].each do |x|
+			if ret and term.include?(x) and term.start_with?("/wiki/")
+				return false
+			end
+		end
+		return true
+	end
+	def to_s
+		term
+	end
 end
 
-print "Term: "
-direccion = gets.chomp.gsub(' ','_')
 
-if direccion.nil?
+
+print "Term: "
+term = gets.chomp.gsub(' ','_').strip
+
+if term.nil?
 	puts "Must enter a term"
 	exit
 end
@@ -56,114 +59,43 @@ second_lang="es"
 
 while cuenta<limit and !ciclo
 	
-	visited.push direccion.strip.downcase #unless visited.include? direccion.strip.downcase
+	visited.push term.strip.downcase #unless visited.include? direccion.strip.downcase
 	
-	ciclo = (ant3 == direccion)
+	ciclo = (ant3 == term)
 	begin
-		page = Hpricot( open( "https://#{first_lang}.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
+		#~ page = Hpricot( open( "https://#{first_lang}.wikipedia.org/wiki/#{CGI::escape(term)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
+		page = Hpricot( open( "http://localhost/wiki/1.html","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
 	rescue
-		puts "Term #{direccion} not found"
+		puts "Term #{term} could not be fetch"
 		exit
 	end
 	
 	if debug
-		print  "#{cuenta}. #{direccion.strip} <= (#{sal.join(",")}) #{ant3} "
+		print  "#{cuenta}. #{term} <= (#{sal.join(",")}) #{ant3} "
 	else
-		print "#{cuenta}. #{direccion.strip} ".ljust(30)
+		print "#{cuenta}. #{term} ".ljust(30)
 	end
 
 	enlaces = []
 	results = page.search( "//p" ) + page.search( "//div/ul/li" )
 	results.each do |parrafo|
-		p parrafo if debug
 		html = parrafo.to_s
-		if html!=""
-			parrafo.search("a").to_a.each do |lnk|
-				if lnk.attributes['href'][0..5]=="/wiki/" and 
-				   checklnk(lnk.attributes['href']) and 
-				   !lnk.attributes['href'].include?("#")
-					enlaces << lnk unless lnk.nil?
-				end
-				p lnk if debug
-			end
-		end
-	
-
-		k=0
-		enlaces.each do |l|
-			html.gsub!(l.to_s,"~#{k}~")
-			k+=1
-		end
-	
-		if debug
-			puts "="*80
-			puts html
-		end
-	
-		intro = []
-		acum = ""
-		flag=false
-		html.each_char do |c|
-			if !flag and c=='~'
-				flag=true
-				acum=c
-			else
-				if flag and c=='~'
-					flag=false
-					acum+=c
-					intro << Link.new(enlaces[acum.gsub('~','').to_i]) unless enlaces[acum.gsub('~','').to_i].nil?
-					acum=""
-				else			
-					if !flag
-						if c=='('
-							intro << ParA.new
-						else
-							if c==')'
-								intro << ParC.new
-							else
-								intro << c
-							end
-						end
-					else
-						acum+=c
-					end
+		unless html.empty?
+			parrafo.search("a").to_a.each do |elem|
+				unless elem.nil?
+					lnk = Link.new(elem)
+					enlaces << lnk if lnk.valid?
 				end
 			end
+		else
+			puts "empty"
 		end
-
-		intro.delete_if {|x| x.class!=Link and x.class!=ParA and x.class!=ParC}
-		if debug
-			puts "="*80
-			puts intro.join(",")
-		end
-	
-		p = 0
-		sal = []
-		intro.each do |x|
-			if x.kind_of? ParA
-				p+=1
-			else
-				if x.kind_of? ParC
-					p-=1
-				else
-					if x.kind_of? Link and p>0
-						#skip
-					else
-						sal << x	
-					end
-				end	
-			end
-		end
-		if debug
-			puts "="*80
-			p sal 
-			gets
-		end
-		break if sal!=[]
+		puts 
+		enlaces.each {|link| puts "#{link.class}::#{link.term}"}
+gets
 	end
 	
 	es_elem = page.at("//a[@lang = '#{second_lang}']")
-	#~ es_elem = page.at("//a[text() = 'Español']")
 	unless es_elem.nil?
 		translation = es_elem.attributes["title"].split("–")[0]
 		puts " -- #{translation.strip}"
@@ -171,11 +103,11 @@ while cuenta<limit and !ciclo
 		puts " -- (no translation for #{second_lang})"
 	end
 	
-	puts "........................Going beyond Philosophy..." if direccion=="Philosophy"
+	puts "........................Going beyond Philosophy..." if term=="Philosophy"
 
 	sal.each do |link|
 		if !visited.include?(link.to_s.strip.downcase)
-			direccion = link.to_s
+			term = link.to_s
 			break
 		end
 	end
@@ -189,6 +121,6 @@ end
 if ciclo
 	puts "Loop detected. stop!"
 else
-	puts "#{cuenta}. #{direccion}" if direccion=="Philosophy"
+	puts "#{cuenta}. #{direccion}" if term=="Philosophy"
 end
 
