@@ -71,7 +71,8 @@ while cuenta<limit and !ciclo
 	end
 
 	enlaces = []
-	page.search( "//p" ).each do |parrafo|
+	results = page.search( "//p" ) + page.search( "//div/ul/li" )
+	results.each do |parrafo|
 		p parrafo if debug
 		html = parrafo.to_s
 		if html!=""
@@ -166,7 +167,7 @@ while cuenta<limit and !ciclo
 	end
 	
 	puts "........................Going beyond Philosophy..." if direccion=="Philosophy"
-	
+
 	sal.each do |link|
 		direccion = link.to_s
 		break unless visited.include? direccion.strip.downcase
