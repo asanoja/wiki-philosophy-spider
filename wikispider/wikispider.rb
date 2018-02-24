@@ -54,16 +54,16 @@ enlaces = []
 
 while direccion!="Philosophy" and cuenta<30 and !ciclo
 	if debug
-		puts  "#{cuenta}. #{direccion} <= (#{sal.join(",")}) #{ant3}"
+		print  "#{cuenta}. #{direccion.strip} <= (#{sal.join(",")}) #{ant3} "
 	else
-		puts "#{cuenta}. #{direccion}"
+		print "#{cuenta}. #{direccion.strip} "
 	end
 	ciclo = (ant3 == direccion)
 	page = Hpricot( open( "https://en.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
 
 	enlaces = []
 	page.search( "//p" ).each do |parrafo|
-	p parrafo if debug
+		p parrafo if debug
 		html = parrafo.to_s
 		if html!=""
 			parrafo.search("a").to_a.each do |lnk|
@@ -148,7 +148,14 @@ while direccion!="Philosophy" and cuenta<30 and !ciclo
 		break if sal!=[]
 	end
 	
-	#sal.each  {|x| puts x}
+	es_elem = page.at("//a[text() = 'Español']")
+	unless es_elem.nil?
+		translation = es_elem.attributes["title"].split("–")[0]
+		puts " -- #{translation.strip}"
+	else
+		puts " -- (no translation)"
+	end
+	
 	direccion = sal.first.to_s
 	cuenta+=1
 	ant3 = ant2
