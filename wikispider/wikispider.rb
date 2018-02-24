@@ -77,7 +77,7 @@ while cuenta<limit and !ciclo
 		html = parrafo.to_s
 		if html!=""
 			parrafo.search("a").to_a.each do |lnk|
-				if lnk.attributes['href'][0..5]=="/wiki/" and checklnk(lnk.attributes['href'])
+				if lnk.attributes['href'][0..5]=="/wiki/" and checklnk(lnk.attributes['href']) and !lnk.attributes['href'].include?("#") and !lnk.attributes['title'].include?("Geographic coordinate system")
 					enlaces << lnk unless lnk.nil?
 				end
 				p lnk if debug
