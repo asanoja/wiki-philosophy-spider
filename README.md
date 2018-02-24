@@ -1,7 +1,7 @@
 # wiki-philosophy-spider
 Spider to verify that every term in Wikipedia is related to the Philosohy page.
 
-It is a fun tool to create a tree of related concepts.
+It is a fun tool to create a list of related concepts.
 
 Input a term (in English) that corresponds to the path (without the /wiki) in the URL of a Wikipedia page.
 
