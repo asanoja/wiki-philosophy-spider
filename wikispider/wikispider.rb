@@ -41,8 +41,6 @@ direccion = gets.chomp.gsub(' ','_')
 if direccion.nil?
 	puts "Must enter a term"
 	exit
-else
-	puts "Starting search for #{direccion}"
 end
 
 cuenta = 1
@@ -51,15 +49,26 @@ ciclo = false
 ant1 = ant2 = ant3 = html = ""
 sal = []
 enlaces = []
+visited = []
+limit=50
 
-while direccion!="Philosophy" and cuenta<30 and !ciclo
+while cuenta<limit and !ciclo
+	
+	visited.push direccion.strip.downcase unless visited.include? direccion.strip.downcase
+	
+	ciclo = (ant3 == direccion)
+	begin
+		page = Hpricot( open( "https://en.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
+	rescue
+		puts "Term #{direccion} not found"
+		exit
+	end
+	
 	if debug
 		print  "#{cuenta}. #{direccion.strip} <= (#{sal.join(",")}) #{ant3} "
 	else
 		print "#{cuenta}. #{direccion.strip} "
 	end
-	ciclo = (ant3 == direccion)
-	page = Hpricot( open( "https://en.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
 
 	enlaces = []
 	page.search( "//p" ).each do |parrafo|
@@ -156,7 +165,12 @@ while direccion!="Philosophy" and cuenta<30 and !ciclo
 		puts " -- (no translation)"
 	end
 	
-	direccion = sal.first.to_s
+	puts "........................Going beyond Philosophy..." if direccion=="Philosophy"
+	
+	sal.each do |link|
+		direccion = link.to_s
+		break unless visited.include? direccion.strip.downcase
+	end
 	cuenta+=1
 	ant3 = ant2
 	ant2 = ant1
