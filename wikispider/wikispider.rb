@@ -27,7 +27,7 @@ end
 
 def checklnk(href)
 	ret = true
-	["File:","Wikipedia:"].each do |x|
+	["File:","Wikipedia:","Glossary_of","List_of","Geographic_coordinate_system","Anexo:","Help:"].each do |x|
 		if ret and href.include? x
 			ret = false
 		end
@@ -51,14 +51,16 @@ sal = []
 enlaces = []
 visited = []
 limit=50
+first_lang="en"
+second_lang="es"
 
 while cuenta<limit and !ciclo
 	
-	visited.push direccion.strip.downcase unless visited.include? direccion.strip.downcase
+	visited.push direccion.strip.downcase #unless visited.include? direccion.strip.downcase
 	
 	ciclo = (ant3 == direccion)
 	begin
-		page = Hpricot( open( "https://en.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
+		page = Hpricot( open( "https://#{first_lang}.wikipedia.org/wiki/#{CGI::escape(direccion)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
 	rescue
 		puts "Term #{direccion} not found"
 		exit
@@ -67,7 +69,7 @@ while cuenta<limit and !ciclo
 	if debug
 		print  "#{cuenta}. #{direccion.strip} <= (#{sal.join(",")}) #{ant3} "
 	else
-		print "#{cuenta}. #{direccion.strip} "
+		print "#{cuenta}. #{direccion.strip} ".ljust(30)
 	end
 
 	enlaces = []
@@ -77,7 +79,9 @@ while cuenta<limit and !ciclo
 		html = parrafo.to_s
 		if html!=""
 			parrafo.search("a").to_a.each do |lnk|
-				if lnk.attributes['href'][0..5]=="/wiki/" and checklnk(lnk.attributes['href']) and !lnk.attributes['href'].include?("#") and !lnk.attributes['title'].include?("Geographic coordinate system")
+				if lnk.attributes['href'][0..5]=="/wiki/" and 
+				   checklnk(lnk.attributes['href']) and 
+				   !lnk.attributes['href'].include?("#")
 					enlaces << lnk unless lnk.nil?
 				end
 				p lnk if debug
@@ -158,19 +162,22 @@ while cuenta<limit and !ciclo
 		break if sal!=[]
 	end
 	
-	es_elem = page.at("//a[text() = 'Español']")
+	es_elem = page.at("//a[@lang = '#{second_lang}']")
+	#~ es_elem = page.at("//a[text() = 'Español']")
 	unless es_elem.nil?
 		translation = es_elem.attributes["title"].split("–")[0]
 		puts " -- #{translation.strip}"
 	else
-		puts " -- (no translation)"
+		puts " -- (no translation for #{second_lang})"
 	end
 	
 	puts "........................Going beyond Philosophy..." if direccion=="Philosophy"
 
 	sal.each do |link|
-		direccion = link.to_s
-		break unless visited.include? direccion.strip.downcase
+		if !visited.include?(link.to_s.strip.downcase)
+			direccion = link.to_s
+			break
+		end
 	end
 	cuenta+=1
 	ant3 = ant2
