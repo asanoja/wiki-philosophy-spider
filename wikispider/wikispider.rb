@@ -9,18 +9,24 @@ class Link
 		@elem = elem
 		@href=elem.attributes['href']
 	end
-	def class
-		p @href
+	def wiki_class
 		match = ""
 		@href.sub(/(\(.*?\))/) { match = $1 }
 		if match
-		  return match
-		 else
-		  return "NONE"
+		  return match.gsub("(","").gsub(")","").upcase
+		else
+		  return nil
 		end
 	end
 	def term
-		return CGI::unescape(@elem.attributes['href'].gsub("/wiki/",""))
+		return CGI::unescape(URI.parse(@href).path).gsub("/wiki/","").gsub("_(#{wiki_class.downcase})","")
+	end
+	def name
+		if wiki_class.nil? || wiki_class.empty?
+			return "#{term}"
+		else
+			return "#{wiki_class}::#{term}"
+		end
 	end
 	def valid?
 		ret = true
@@ -64,7 +70,7 @@ while cuenta<limit and !ciclo
 	ciclo = (ant3 == term)
 	begin
 		#~ page = Hpricot( open( "https://#{first_lang}.wikipedia.org/wiki/#{CGI::escape(term)}","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
-		page = Hpricot( open( "http://localhost/wiki/1.html","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
+		page = Hpricot( open( "http://192.168.1.200/wiki/1.html","User-Agent" => "Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20110506 Firefox/4.0.1" )) 
 	rescue
 		puts "Term #{term} could not be fetch"
 		exit
@@ -91,7 +97,7 @@ while cuenta<limit and !ciclo
 			puts "empty"
 		end
 		puts 
-		enlaces.each {|link| puts "#{link.class}::#{link.term}"}
+		enlaces.each {|link| puts "#{link.name}"}
 gets
 	end
 	
