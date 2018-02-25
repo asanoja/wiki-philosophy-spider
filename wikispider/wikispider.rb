@@ -19,7 +19,7 @@ class Link
 		end
 	end
 	def term
-		return CGI::unescape(URI.parse(@href).path).gsub("/wiki/","").gsub("_(#{wiki_class.downcase})","")
+		return CGI::unescape(URI.parse(@href).path).gsub("/wiki/","").gsub("_(#{wiki_class.downcase})","").strip
 	end
 	def name
 		if wiki_class.nil? || wiki_class.empty?
@@ -65,7 +65,7 @@ second_lang="es"
 
 while cuenta<limit and !ciclo
 	
-	visited.push term.strip.downcase #unless visited.include? direccion.strip.downcase
+	visited.push term.downcase
 	
 	ciclo = (ant3 == term)
 	begin
@@ -83,22 +83,21 @@ while cuenta<limit and !ciclo
 	end
 
 	enlaces = []
-	results = page.search( "//p" ) + page.search( "//div/ul/li" )
+	results = page.search( "//div[@class='mw-parser-output']//p" ) + page.search( "//div/ul/li" )
 	results.each do |parrafo|
 		html = parrafo.to_s
 		unless html.empty?
 			parrafo.search("a").to_a.each do |elem|
 				unless elem.nil?
 					lnk = Link.new(elem)
+					puts "ADD #{lnk.name} #{elem.xpath}"
+					gets
 					enlaces << lnk if lnk.valid?
 				end
 			end
 		else
 			puts "empty"
 		end
-		puts 
-		enlaces.each {|link| puts "#{link.name}"}
-gets
 	end
 	
 	es_elem = page.at("//a[@lang = '#{second_lang}']")
@@ -111,8 +110,12 @@ gets
 	
 	puts "........................Going beyond Philosophy..." if term=="Philosophy"
 
-	sal.each do |link|
-		if !visited.include?(link.to_s.strip.downcase)
+	#~ p visited
+	enlaces.each {|lnk| puts lnk.wiki_class}
+	gets
+	enlaces.each do |link|
+		puts link.name
+		if !visited.include?(link.name)
 			term = link.to_s
 			break
 		end
@@ -120,7 +123,7 @@ gets
 	cuenta+=1
 	ant3 = ant2
 	ant2 = ant1
-	ant1 = direccion
+	ant1 = term
 
 	sleep 1.5
 end
