@@ -10,11 +10,11 @@ class Link
 		@href=elem.attributes['href']
 	end
 	def class
-	p @href
-		re = /\((\w+),(\w+)\)/
-		match = re.match(@href)
+		p @href
+		match = ""
+		@href.sub(/(\(.*?\))/) { match = $1 }
 		if match
-		  return match[1]
+		  return match
 		 else
 		  return "NONE"
 		end
